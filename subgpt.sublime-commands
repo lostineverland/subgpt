@@ -1,0 +1,14 @@
+[
+    {
+        "caption": "SubGPT: Chat",
+        "command": "subgpt_chat"
+    },
+    {
+        "caption": "SubGPT: Link",
+        "command": "subgpt_link"
+    },
+    {
+        "caption": "SubGPT: Summary",
+        "command": "subgpt_summary"
+    }
+]
