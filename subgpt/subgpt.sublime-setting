@@ -1,0 +1,6 @@
+{
+  "api_key": "sk-################################################",
+  "log_path": "$HOME/GPT_logs",
+  "model": "gpt-4o",
+  "role": "You are a knowledge engine"
+}
