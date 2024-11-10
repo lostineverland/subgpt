@@ -1,12 +1,24 @@
 import sublime
 import sublime_plugin
 
-class SubgptChatCommand(sublime_plugin.TextCommand):
-    """Insert Iso Day"""
+from funcy.times import iso_ts
+
+class SubgptNewChatCommand(sublime_plugin.WindowCommand):
+    """Open a new chat"""
     def run(self, edit):
-        for region in self.view.sel():
-            # Insert the text at the cursor position
-            self.view.insert(edit, region.begin(), week())
+        # Create a new file (view) in the current window
+        new_view = self.window.new_file()
+
+        # Set the syntax file for the new view
+        # Replace 'Packages/YourPluginName/YourSyntaxFile.sublime-syntax'
+        # with the correct path to your syntax file
+        new_view.set_syntax_file('Packages/subgpt/subgpt.sublime-syntax')
+
+        # Optionally, set the name of the new view (not saved)
+        new_view.set_name(iso_ts('minutes', local=True) + '.md')
+
+        # Optionally, bring the new view to focus
+        self.window.focus_view(new_view)
 
 
 class SubgptLinkCommand(sublime_plugin.TextCommand):

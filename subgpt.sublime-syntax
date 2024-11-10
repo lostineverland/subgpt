@@ -1,0 +1,10 @@
+%YAML 1.2
+---
+name: SubGPT Chat
+file_extensions:
+  - md
+scope: source.subgptmd
+
+contexts:
+  main:
+    - include: scope:text.html.markdown
