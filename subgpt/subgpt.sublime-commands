@@ -1,7 +1,7 @@
 [
     {
         "caption": "SubGPT: Chat",
-        "command": "subgpt_chat"
+        "command": "subgpt_new_chat"
     },
     {
         "caption": "SubGPT: Link",

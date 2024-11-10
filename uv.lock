@@ -1,0 +1,27 @@
+version = 1
+requires-python = ">=3.8"
+
+[[package]]
+name = "cligpt"
+version = "0.1.0"
+source = { git = "ssh://git@github.com/lostineverland/cligpt.git#68898b888d967ab541aa34a9e8f3074f811d3a69" }
+
+[[package]]
+name = "funcypy"
+version = "0.1.0"
+source = { git = "ssh://git@github.com/lostineverland/funcypy.git#50887cf28807129d073d44a655efd049132e7d6b" }
+
+[[package]]
+name = "subgpt"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "cligpt" },
+    { name = "funcypy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cligpt", git = "ssh://git@github.com/lostineverland/cligpt.git" },
+    { name = "funcypy", git = "ssh://git@github.com/lostineverland/funcypy.git" },
+]

@@ -5,14 +5,22 @@ description = "A ChatGPT plug-in for sublime text."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
+    "cligpt",
     "funcypy @ git+ssh://git@github.com/lostineverland/funcypy.git",
 ]
 authors = [
   { name="Carlos Bonilla", email="lostineverland@gmail.com" }
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["subgpt"]
+
 [tool.uv.sources]
+cligpt = { git = "ssh://git@github.com/lostineverland/cligpt.git" }
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
