@@ -1,14 +1,18 @@
 [
     {
-        "caption": "SubGPT: Chat",
+        "caption": "SubGPT: New Chat",
         "command": "subgpt_new_chat"
     },
     {
-        "caption": "SubGPT: Link",
-        "command": "subgpt_link"
+        "caption": "SubGPT: Send Query",
+        "command": "subgpt_send_query"
     },
-    {
-        "caption": "SubGPT: Summary",
-        "command": "subgpt_summary"
-    }
+    // {
+    //     "caption": "SubGPT: Link",
+    //     "command": "subgpt_link"
+    // },
+    // {
+    //     "caption": "SubGPT: Summary",
+    //     "command": "subgpt_summary"
+    // }
 ]
