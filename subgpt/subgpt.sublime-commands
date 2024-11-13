@@ -7,6 +7,11 @@
         "caption": "SubGPT: Send Query",
         "command": "subgpt_send_query"
     },
+    {
+        "caption": "SubGPT: Send Debug Query",
+        "command": "subgpt_send_query",
+        "args": {"debug": true}
+    },
     // {
     //     "caption": "SubGPT: Link",
     //     "command": "subgpt_link"

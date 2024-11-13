@@ -18,8 +18,8 @@ import frontmatter, yaml
 
 
 q_delimeter = 'Question:\n---------\n'
-a_delimeter = '\n\nAnswer:\n-------\n'
-s_delimeter = '\n\nSummary Keywords'
+a_delimeter = 'Answer:\n-------\n'
+s_delimeter = 'Summary Keywords'
 
 def get_settings(window):
     settings = sublime.load_settings("subgpt.sublime-settings").to_dict()
@@ -50,7 +50,7 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
                     )
             ))
         # Insert Question marker
-        q, a = cligpt.render_response('', '')
+        q, a = render_response('', '')
         new_view.run_command('subgpt_create_new_chat', {
             "contents": yaml_frontmatter + '\n' + q[:-2]
         })
@@ -66,24 +66,23 @@ class SubgptCreateNewChatCommand(sublime_plugin.TextCommand):
 
 
 class SubgptSendQueryCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, debug=False):
         settings = get_settings(self.view.window())
         api_key = ensure_api_key(settings)
         entire_region = sublime.Region(0, self.view.size())
         page = self.view.substr(entire_region)
         md = frontmatter.loads(page)
         messages = list(build_messages(md.content, md.metadata))
-        response = callgpt(messages, md.metadata['model'], api_key, debug=False)
-        message, model = process_response(response)
-        add_response(edit, self.view, message, model, response)
-
-        # # for debugging
-        # self.view.insert(edit, self.view.size(), "\n***" + json.dumps(response, indent=2) + '***\n')
-        # self.view.insert(edit, self.view.size(),
-        #     "\n" + json.dumps(md.metadata) + \
-        #     "\n" + json.dumps(messages, indent=4) + \
-        #     response
-        # )
+        response = callgpt(messages, md.metadata['model'], api_key, debug=debug)
+        if not debug:
+            message, model = process_response(response)
+            add_response(edit, self.view, message, model, response)
+        else:
+            self.view.insert(edit, self.view.size(),
+                "\n" + json.dumps(md.metadata) + \
+                "\n" + json.dumps(messages, indent=4)
+            )
+            self.view.insert(edit, self.view.size(), "\nquery object\n" + json.dumps(response, indent=2) + '\n')
 
 
 class SubgptRenderQueryCommand(sublime_plugin.TextCommand):
@@ -125,27 +124,11 @@ def parse_block(block):
     return map(dict(zip(
             # split string by a_delimeter then by s_delimeter and concat into a single list
                 range(3),
-                seqs.concat(*(i.split(s_delimeter) for i in block.split(a_delimeter))),
+                seqs.concat(*(i.split(s_delimeter) for i in block.split(indent(2, a_delimeter)[:-2]))),
             )).get,
         # because I always want to return 2 values make sure they're allocated with None when
         # not enough are present
         range(2))
-    # return dict(zip(
-    #         range(3),
-    #         seqs.concat(*(i.split(s_delimeter) for i in block.split(a_delimeter))),
-    #         )), None
-
-
-
-    # if q_a := block.split(a_delimeter):
-    #     if a := q_a[1:]:
-    #         a_s = a.split(s_delimeter)
-    #         return q_a[0], a_s[0]
-    #     else:
-    #         return q_a[0], None
-    # else:
-    #     return None, None
-
 
 def build_messages(contents, metadata):
     chat = parse_chat(contents, metadata)
@@ -153,10 +136,10 @@ def build_messages(contents, metadata):
     if q:
         yield dict(role='system', content=meta.get('role', ''))
         yield dict(role='user', content=q)
-        if a: yield dict(role='assistant', content=a)
+        if a: yield dict(role='assistant', content=frontmatter.loads(dedent(2, a)).content)
         for q, a, meta in chat:
             if q: yield dict(role='user', content=q)
-            if a: yield dict(role='assistant', content=a)
+            if a: yield dict(role='assistant', content=frontmatter.loads(dedent(2, a)).content)
 
 
 def callgpt(messages, model, api_key, debug=False):
@@ -170,8 +153,8 @@ def callgpt(messages, model, api_key, debug=False):
              "messages": messages,
              "temperature": 0.7
            }).encode('utf-8')
-    if debug: return json.dumps(dict(endpoint=endpoint, data=json.loads(data), headers=headers))
-    print('Querying OpenAI...')
+    if debug: return dict(endpoint=endpoint, data=json.loads(data), headers=headers)
+    print('Querying OpenAI...', flush=True)
     req = urllib.request.Request(endpoint, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req) as response:
@@ -193,15 +176,30 @@ def ensure_api_key(settings):
     assert "#######" not in api_key, "A valid api_key must be provided, make sure to replace it in your settings file"
     return api_key
 
+def render_response(query, answer, metadata=None):
+    u_ = lambda s: '-' * len(s) # underline function
+    q = 'Question:'
+    a = 'Answer:'
+    rendered_q = f'\n{q}\n{u_(q)}\n{query}\n\n'
+    if metadata:
+        rendered_a = f'\n\n{a}\n{u_(a)}\n---\n{yaml.dump(metadata)}---\n\n{answer}\n\n\n'
+    else:
+        rendered_a = f'\n\n{a}\n{u_(a)}\n{answer}\n\n\n'
+    return rendered_q, rendered_a
+
 def add_response(edit, view, message, model, response):
-    answer_meta = '  ---\n{}\n  ---\n'.format(yaml.dump(dict(
+    q, answer = render_response('', message['content'], dict(
                 model=model,
                 timestamp=iso_ts('minutes', local=True)
-            )))
-    answer = cligpt.render_response('', message['content'])[1]
-    i = len(a_delimeter)
-    answer = answer[:i-1] + answer_meta + answer[i-1:]
-    view.insert(edit, view.size(), answer)
+            ))
+    indented_answer ='\n\n' + indent(2, answer)
+    view.insert(edit, view.size(), indented_answer + q)
+
+def indent(n, s):
+    return '\n'.join(map(lambda s: ' ' * n + s, s.split('\n')))
+
+def dedent(n, s):
+    return '\n'.join(map(lambda s: s[n:], s.split('\n')))
 
 def display(s):
     return """
