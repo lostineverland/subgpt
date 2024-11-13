@@ -10,18 +10,19 @@ sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
 # <-- plug-in dev workaround 
 
 from funcypy.eager.cols import removekey
-from funcypy.funcy import pipe
+from funcypy.funcy import pipe, has
+from funcypy import seqs
+from funcypy.times import iso_ts, now
 import cligpt
 import frontmatter, yaml
 
-from funcypy.times import iso_ts, now
 
 q_delimeter = 'Question:\n---------\n'
-a_delimeter = '\n\nAnswer:\n  -------\n'
+a_delimeter = '\n\nAnswer:\n-------\n'
 s_delimeter = '\n\nSummary Keywords'
 
 def get_settings(window):
-    settings = sublime.load_settings("subgpt.sublime-setting").to_dict()
+    settings = sublime.load_settings("subgpt.sublime-settings").to_dict()
     project_settings = window.project_data().get('settings', {})
     return {**settings, **project_settings}
 
@@ -44,7 +45,7 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
             yaml.dump(
                 pipe(self.window,
                     get_settings,
-                    removekey(lambda e: {'api_key', 'log_path'}.issuperset([e])),
+                    removekey(has('api_key', 'log_path')),
                     lambda e: {**e, 'timestamp': iso_ts('minutes')}
                     )
             ))
@@ -72,11 +73,17 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
         page = self.view.substr(entire_region)
         md = frontmatter.loads(page)
         messages = list(build_messages(md.content, md.metadata))
-        # response = callgpt(messages, md.metadata['model'], api_key)
-        # message, model = process_response(reponse)
-        # add_response(edit, self.view, message, model)
-        self.view.insert(edit, self.view.size(), "\n" + json.dumps(md.metadata) + "\n" + json.dumps(messages, indent=4))
-        # self.view.insert(edit, self.view.size(), "\n***" + json.dumps(md.content.split(q_delimeter)) + '***\n')
+        response = callgpt(messages, md.metadata['model'], api_key, debug=False)
+        message, model = process_response(response)
+        add_response(edit, self.view, message, model, response)
+
+        # # for debugging
+        # self.view.insert(edit, self.view.size(), "\n***" + json.dumps(response, indent=2) + '***\n')
+        # self.view.insert(edit, self.view.size(),
+        #     "\n" + json.dumps(md.metadata) + \
+        #     "\n" + json.dumps(messages, indent=4) + \
+        #     response
+        # )
 
 
 class SubgptRenderQueryCommand(sublime_plugin.TextCommand):
@@ -115,30 +122,44 @@ def parse_chat(contents, metadata):
 
 def parse_block(block):
     'handle question/answer/summary block'
-    if q_a := block.split(a_delimeter):
-        if a := q_a[1:]:
-            a_s = a.split(s_delimeter)
-            return q_a[0], a_s[0]
-        else:
-            return q_a[0], None
-    else:
-        return None, None
+    return map(dict(zip(
+            # split string by a_delimeter then by s_delimeter and concat into a single list
+                range(3),
+                seqs.concat(*(i.split(s_delimeter) for i in block.split(a_delimeter))),
+            )).get,
+        # because I always want to return 2 values make sure they're allocated with None when
+        # not enough are present
+        range(2))
+    # return dict(zip(
+    #         range(3),
+    #         seqs.concat(*(i.split(s_delimeter) for i in block.split(a_delimeter))),
+    #         )), None
+
+
+
+    # if q_a := block.split(a_delimeter):
+    #     if a := q_a[1:]:
+    #         a_s = a.split(s_delimeter)
+    #         return q_a[0], a_s[0]
+    #     else:
+    #         return q_a[0], None
+    # else:
+    #     return None, None
 
 
 def build_messages(contents, metadata):
     chat = parse_chat(contents, metadata)
-    q, a, meta = next(chat)
+    q, a, meta = next(chat, [None, None, None])
     if q:
         yield dict(role='system', content=meta.get('role', ''))
         yield dict(role='user', content=q)
-        if a: yield dict(role='assistant', content=ans)
+        if a: yield dict(role='assistant', content=a)
         for q, a, meta in chat:
-            yield dict(role='system', content=meta.get('role', ''))
             if q: yield dict(role='user', content=q)
-            if a: yield dict(role='assistant', content=ans)
+            if a: yield dict(role='assistant', content=a)
 
 
-def callgpt(messages, model, api_key):
+def callgpt(messages, model, api_key, debug=False):
     endpoint = 'https://api.openai.com/v1/chat/completions'
     headers = {
         "Content-Type": "application/json",
@@ -149,11 +170,14 @@ def callgpt(messages, model, api_key):
              "messages": messages,
              "temperature": 0.7
            }).encode('utf-8')
+    if debug: return json.dumps(dict(endpoint=endpoint, data=json.loads(data), headers=headers))
+    print('Querying OpenAI...')
     req = urllib.request.Request(endpoint, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req) as response:
             raw_response = response.read()
             response = json.loads(raw_response.decode('utf-8'))
+            print('Querying done')
             return response
     except urllib.error.URLError as e:
         raise e
@@ -169,14 +193,14 @@ def ensure_api_key(settings):
     assert "#######" not in api_key, "A valid api_key must be provided, make sure to replace it in your settings file"
     return api_key
 
-def add_response(edit, view, message, model):
-    answer_meta = '  ---\n{}\n---\n'.format(yaml.dump(
-            model=model,
-            timestamp=iso_ts('minutes', local=True)
-        ))
-    answer = cligpt.render_response('', message)
+def add_response(edit, view, message, model, response):
+    answer_meta = '  ---\n{}\n  ---\n'.format(yaml.dump(dict(
+                model=model,
+                timestamp=iso_ts('minutes', local=True)
+            )))
+    answer = cligpt.render_response('', message['content'])[1]
     i = len(a_delimeter)
-    answer = answer[:i] + answer_meta + answer[i+1:]
+    answer = answer[:i-1] + answer_meta + answer[i-1:]
     view.insert(edit, view.size(), answer)
 
 def display(s):
