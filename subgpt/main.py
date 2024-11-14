@@ -1,5 +1,6 @@
 import sublime
 import sublime_plugin
+import os
 import json
 import urllib.request
 import urllib.error
@@ -73,16 +74,20 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
         page = self.view.substr(entire_region)
         md = frontmatter.loads(page)
         messages = list(build_messages(md.content, md.metadata))
-        response = callgpt(messages, md.metadata['model'], api_key, debug=debug)
-        if not debug:
-            message, model = process_response(response)
-            add_response(edit, self.view, message, model, response)
+        if messages[-1].get('role') == 'user' or debug:
+            response = callgpt(messages, md.metadata['model'], api_key, debug=debug)
+            if not debug:
+                message, model = process_response(response)
+                add_response(edit, self.view, message, model, response)
+            else:
+                self.view.insert(edit, self.view.size(),
+                    "\n" + json.dumps(md.metadata) + \
+                    "\n" + json.dumps(messages, indent=4) + \
+                    "\n" + json.dumps(settings, indent=4)
+                )
+                self.view.insert(edit, self.view.size(), "\nquery object\n" + json.dumps(response, indent=2) + '\n')
         else:
-            self.view.insert(edit, self.view.size(),
-                "\n" + json.dumps(md.metadata) + \
-                "\n" + json.dumps(messages, indent=4)
-            )
-            self.view.insert(edit, self.view.size(), "\nquery object\n" + json.dumps(response, indent=2) + '\n')
+            print('noop')
 
 
 class SubgptRenderQueryCommand(sublime_plugin.TextCommand):
