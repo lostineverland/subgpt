@@ -2,8 +2,10 @@ import sublime
 import sublime_plugin
 import os
 import json
+import time
 import urllib.request
 import urllib.error
+import threading
 
 # plug-in dev workaround -->
 import sys
@@ -68,6 +70,11 @@ class SubgptCreateNewChatCommand(sublime_plugin.TextCommand):
 
 class SubgptSendQueryCommand(sublime_plugin.TextCommand):
     def run(self, edit, debug=False):
+        # Start the request in a new thread
+        thread = threading.Thread(target=self.send_query, kwargs=dict(edit=edit, debug=debug))
+        thread.start()
+
+    def send_query(self, edit, debug):
         settings = get_settings(self.view.window())
         api_key = ensure_api_key(settings)
         entire_region = sublime.Region(0, self.view.size())
@@ -75,23 +82,33 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
         md = frontmatter.loads(page)
         messages = list(build_messages(md.content, md.metadata))
         if messages[-1].get('role') == 'user' or debug:
+            status = AsyncStatusMessage(self.view, 'OpenAI', ['GPT.', 'GPT..', 'GPT...'], interval=500)
             response = callgpt(messages, md.metadata['model'], api_key, debug=debug)
-            if not debug:
-                message, model = process_response(response)
-                add_response(edit, self.view, message, model, response)
-            else:
-                self.view.insert(edit, self.view.size(),
-                    "\n" + json.dumps(md.metadata) + \
-                    "\n" + json.dumps(messages, indent=4) + \
-                    "\n" + json.dumps(settings, indent=4)
-                )
-                self.view.insert(edit, self.view.size(), "\nquery object\n" + json.dumps(response, indent=2) + '\n')
+            status.clear()
+            self.view.run_command('subgpt_render_query', {
+                "response": response,
+                "metadata": md.metadata,
+                "messages": messages,
+                "settings": settings,
+                "debug": debug,
+            })
         else:
             print('noop')
 
 
 class SubgptRenderQueryCommand(sublime_plugin.TextCommand):
-    pass
+    def run(self, edit, response, metadata, messages, settings, debug=None):
+        if not debug:
+            message, model = process_response(response)
+            add_response(edit, self.view, message, model, response)
+        else:
+            self.view.insert(edit, self.view.size(),
+                "\n" + json.dumps(dict(
+                    metadata=metadata,
+                    messages=messages,
+                    settings=settings,
+                    ), indent=2))
+            self.view.insert(edit, self.view.size(), "\nquery object\n" + json.dumps(response, indent=2) + '\n')
 
 class SubgptLinkCommand(sublime_plugin.TextCommand):
     """Insert Iso Day"""
@@ -119,6 +136,31 @@ class SubgptDisplayLineCommand(sublime_plugin.TextCommand):
         self.view.show_popup(contents, max_width=600, max_height=7000)
 
 
+class AsyncStatusMessage:
+    def __init__(self, view, key, messages, interval=1000):
+        self.view = view
+        self.key = key
+        self.messages = messages
+        self.interval = interval
+        self.index = 0
+        self.active = True
+        self.animate()
+
+    def animate(self):
+        if not self.active:
+            return
+        message = self.messages[self.index % len(self.messages)]
+        self.view.set_status(self.key, message)
+
+        # Schedule the next update
+        self.index += 1
+        sublime.set_timeout_async(self.animate, self.interval)
+
+    def clear(self):
+        self.active = False
+        self.view.erase_status(self.key)
+
+
 def parse_chat(contents, metadata):
     for block in contents.split(q_delimeter)[1:]:
         q, a = parse_block(block)
@@ -140,11 +182,11 @@ def build_messages(contents, metadata):
     q, a, meta = next(chat, [None, None, None])
     if q:
         yield dict(role='system', content=meta.get('role', ''))
-        yield dict(role='user', content=q)
-        if a: yield dict(role='assistant', content=frontmatter.loads(dedent(2, a)).content)
+        yield dict(role='user', content=clean_white_space(q))
+        if a: yield dict(role='assistant', content=clean_white_space(frontmatter.loads(dedent(2, a)).content))
         for q, a, meta in chat:
-            if q: yield dict(role='user', content=q)
-            if a: yield dict(role='assistant', content=frontmatter.loads(dedent(2, a)).content)
+            if q: yield dict(role='user', content=clean_white_space(q))
+            if a: yield dict(role='assistant', content=clean_white_space(frontmatter.loads(dedent(2, a)).content))
 
 
 def callgpt(messages, model, api_key, debug=False):
@@ -159,13 +201,11 @@ def callgpt(messages, model, api_key, debug=False):
              "temperature": 0.7
            }).encode('utf-8')
     if debug: return dict(endpoint=endpoint, data=json.loads(data), headers=headers)
-    print('Querying OpenAI...', flush=True)
     req = urllib.request.Request(endpoint, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req) as response:
             raw_response = response.read()
             response = json.loads(raw_response.decode('utf-8'))
-            print('Querying done')
             return response
     except urllib.error.URLError as e:
         raise e
@@ -194,6 +234,8 @@ def render_response(query, answer, metadata=None):
 
 def add_response(edit, view, message, model, response):
     q, answer = render_response('', message['content'], dict(
+                # removekey(has('content'), )
+                response=response,
                 model=model,
                 timestamp=iso_ts('minutes', local=True)
             ))
@@ -205,6 +247,16 @@ def indent(n, s):
 
 def dedent(n, s):
     return '\n'.join(map(lambda s: s[n:], s.split('\n')))
+
+
+def status_update(view, key, messages):
+    sublime.set_timeout_async(lambda: self.view.erase_status(key), 0)
+
+def clean_white_space(s):
+    start, end = (lambda i: (i[0], i[-1]))(s.split())
+    start_index = s.find(start)
+    end_index = s.rfind(end) + len(end)
+    return s[start_index:end_index]
 
 def display(s):
     return """
