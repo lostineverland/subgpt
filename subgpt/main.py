@@ -6,17 +6,18 @@ import time
 import urllib.request
 import urllib.error
 import threading
+import functools
 
 # plug-in dev workaround -->
 import sys
 sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
 # <-- plug-in dev workaround 
 
-from funcypy.eager.cols import removekey
-from funcypy.funcy import pipe, has
+from funcypy.eager.cols import removekey as remove_dict_key
+from funcypy.cols import flatten, nestten, removekey
+from funcypy.funcy import pipe, has, juxt, rcomp
 from funcypy import seqs
 from funcypy.times import iso_ts, now
-import cligpt
 import frontmatter, yaml
 
 
@@ -48,7 +49,7 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
             yaml.dump(
                 pipe(self.window,
                     get_settings,
-                    removekey(has('api_key', 'log_path')),
+                    remove_dict_key(has('api_key', 'log_path')),
                     lambda e: {**e, 'timestamp': iso_ts('minutes')}
                     )
             ))
@@ -225,7 +226,7 @@ def render_response(query, answer, metadata=None):
     u_ = lambda s: '-' * len(s) # underline function
     q = 'Question:'
     a = 'Answer:'
-    rendered_q = f'\n{q}\n{u_(q)}\n{query}\n\n'
+    rendered_q = f'\n{q}\n{u_(q)}\n{query}\n'
     if metadata:
         rendered_a = f'\n\n{a}\n{u_(a)}\n---\n{yaml.dump(metadata)}---\n\n{answer}\n\n\n'
     else:
@@ -234,8 +235,17 @@ def render_response(query, answer, metadata=None):
 
 def add_response(edit, view, message, model, response):
     q, answer = render_response('', message['content'], dict(
-                # removekey(has('content'), )
-                response=response,
+                response=pipe(response,
+                        functools.partial(flatten, follow_list=True),
+                        removekey(
+                            rcomp(
+                                juxt(
+                                    set('choices.').issubset,
+                                    set('.message.content').issubset),
+                                all)),
+                        nestten,
+                        dict
+                    ),
                 model=model,
                 timestamp=iso_ts('minutes', local=True)
             ))
