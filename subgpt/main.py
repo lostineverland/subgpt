@@ -226,7 +226,7 @@ def render_response(query, answer, metadata=None):
     u_ = lambda s: '-' * len(s) # underline function
     q = 'Question:'
     a = 'Answer:'
-    rendered_q = f'\n{q}\n{u_(q)}\n{query}\n'
+    rendered_q = f'\n{q}\n{u_(q)}\n{query}\n\n'
     if metadata:
         rendered_a = f'\n\n{a}\n{u_(a)}\n---\n{yaml.dump(metadata)}---\n\n{answer}\n\n\n'
     else:
