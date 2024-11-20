@@ -15,7 +15,7 @@ sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
 
 from funcypy.eager.cols import removekey as remove_dict_key
 from funcypy.cols import flatten, nestten, removekey
-from funcypy.funcy import pipe, has, juxt, rcomp
+from funcypy.funcy import pipe, has, juxt, rcomp, partial, complement
 from funcypy import seqs
 from funcypy.times import iso_ts, now
 import frontmatter, yaml
@@ -233,16 +233,29 @@ def render_response(query, answer, metadata=None):
         rendered_a = f'\n\n{a}\n{u_(a)}\n{answer}\n\n\n'
     return rendered_q, rendered_a
 
+def filter_response_meta(*fields):
+    has_substr = partial(lambda substr, key: substr in key)
+    wild_cards = lambda key: rcomp(juxt(*[has_substr(i) for i in key.split('*')]), all)
+    verbatim = partial(lambda substr, key: substr == key)
+    return rcomp(juxt(
+                *map(wild_cards, filter(has_substr('.*'), fields)),
+                *map(verbatim, filter(complement(has_substr('.*')), fields))),
+                any)
+
 def add_response(edit, view, message, model, response):
     q, answer = render_response('', message['content'], dict(
                 response=pipe(response,
                         functools.partial(flatten, follow_list=True),
-                        removekey(
-                            rcomp(
-                                juxt(
-                                    set('choices.').issubset,
-                                    set('.message.content').issubset),
-                                all)),
+                        removekey(filter_response_meta(
+                            'rechoices.*.index',
+                            'choices.*.message.role',
+                            'choices.*.message.content',
+                            'created',
+                            'id',
+                            'model',
+                            'system_fingerprint',
+                            'usage.completion_tokens_details.*',
+                            )),
                         nestten,
                         dict
                     ),
