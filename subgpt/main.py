@@ -44,7 +44,7 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
             yaml.dump(
                 pipe(self.window,
                     get_settings,
-                    remove_dict_key(has('api_key', 'log_path')),
+                    remove_dict_key(has('api_key', 'log_path', 'word_wrap')),
                     lambda e: {**e, 'timestamp': iso_ts('minutes')}
                     )
             ))
@@ -83,7 +83,7 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
             status.clear()
             self.view.run_command('subgpt_render_query', {
                 "response": response,
-                "metadata": md.metadata,
+                "md_metadata": md.metadata,
                 "messages": messages,
                 "settings": settings,
                 "debug": debug,
@@ -93,14 +93,14 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
 
 
 class SubgptRenderQueryCommand(sublime_plugin.TextCommand):
-    def run(self, edit, response, metadata, messages, settings, debug=None):
+    def run(self, edit, response, md_metadata, messages, settings, debug=None):
         if not debug:
             message, model = process_response(response)
-            add_response(edit, self.view, message, model, response)
+            add_response(edit, self.view, message, model, response, {**settings, **md_metadata})
         else:
             self.view.insert(edit, self.view.size(),
                 "\n" + json.dumps(dict(
-                    metadata=metadata,
+                    md_metadata=md_metadata,
                     messages=messages,
                     settings=settings,
                     ), indent=2))
@@ -227,26 +227,29 @@ def filter_response_meta(*fields):
                 *map(verbatim, filter(complement(has_substr('.*')), fields))),
                 any)
 
-def add_response(edit, view, message, model, response):
-    q, answer = render_response('', message['content'], dict(
-                response=pipe(response,
-                        functools.partial(flatten, follow_list=True),
-                        removekey(filter_response_meta(
-                            'rechoices.*.index',
-                            'choices.*.message.role',
-                            'choices.*.message.content',
-                            'created',
-                            'id',
-                            'model',
-                            'system_fingerprint',
-                            'usage.completion_tokens_details.*',
-                            )),
-                        nestten,
-                        dict
-                    ),
-                model=model,
-                timestamp=iso_ts('minutes', local=True)
-            ))
+def add_response(edit, view, message, model, response, settings):
+    meta = None
+    if settings.get('include_meta'):
+        meta = dict(
+            response=pipe(response,
+                    functools.partial(flatten, follow_list=True),
+                    removekey(filter_response_meta(
+                        'rechoices.*.index',
+                        'choices.*.message.role',
+                        'choices.*.message.content',
+                        'created',
+                        'id',
+                        'model',
+                        'system_fingerprint',
+                        'usage.completion_tokens_details.*',
+                        )),
+                    nestten,
+                    dict
+                ),
+            model=model,
+            timestamp=iso_ts('minutes', local=True)
+        )
+    q, answer = render_response('', message['content'], meta)
     indented_answer ='\n\n' + indent(2, answer)
     view.insert(edit, view.size(), indented_answer + q)
 
