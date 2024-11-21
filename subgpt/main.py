@@ -8,11 +8,6 @@ import urllib.error
 import threading
 import functools
 
-# plug-in dev workaround -->
-import sys
-sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
-# <-- plug-in dev workaround 
-
 from funcypy.eager.cols import removekey as remove_dict_key
 from funcypy.cols import flatten, nestten, removekey
 from funcypy.funcy import pipe, has, juxt, rcomp, partial, complement
@@ -125,16 +120,6 @@ class SubgptSummaryCommand(sublime_plugin.TextCommand):
         for region in self.view.sel():
             # Insert the text at the cursor position
             self.view.insert(edit, region.begin(), now())
-
-
-class SubgptDisplayLineCommand(sublime_plugin.TextCommand):
-    """exploring the sublime api"""
-    def run(self, edit):
-        lines = self.view.lines(self.view.sel()[0])
-        contents = display('/n'.join(map(self.view.substr, lines)))
-        line = self.view.line(self.view.sel()[0])
-        content = self.view.substr(line)
-        self.view.show_popup(contents, max_width=600, max_height=7000)
 
 
 class AsyncStatusMessage:
