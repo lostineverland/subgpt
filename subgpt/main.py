@@ -8,6 +8,11 @@ import urllib.error
 import threading
 import functools
 
+# plug-in dev workaround -->
+import sys
+sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
+# <-- plug-in dev workaround 
+
 from funcypy.eager.cols import removekey as remove_dict_key
 from funcypy.cols import flatten, nestten, removekey
 from funcypy.funcy import pipe, has, juxt, rcomp, partial, complement
