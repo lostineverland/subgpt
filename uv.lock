@@ -2,6 +2,11 @@ version = 1
 requires-python = ">=3.8"
 
 [[package]]
+name = "funcypy"
+version = "0.2.0"
+source = { git = "ssh://git@github.com/lostineverland/funcypy.git#6e345dcaaa0a62bff0816f426153002f40f74b85" }
+
+[[package]]
 name = "python-frontmatter"
 version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -78,8 +83,12 @@ name = "subgpt"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "funcypy" },
     { name = "python-frontmatter" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "python-frontmatter", specifier = ">=1.1.0" }]
+requires-dist = [
+    { name = "funcypy", git = "ssh://git@github.com/lostineverland/funcypy.git" },
+    { name = "python-frontmatter", specifier = ">=1.1.0" },
+]

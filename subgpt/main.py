@@ -1,6 +1,6 @@
 import sublime
 import sublime_plugin
-import os
+import os, sys
 import json
 import time
 import urllib.request
@@ -8,11 +8,9 @@ import urllib.error
 import threading
 import functools
 
-# plug-in dev workaround -->
-import sys
-# sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
+# plug-in dependencies workaround -->
 sys.path.append(os.path.join(os.path.dirname(__file__), 'deps'))
-# <-- plug-in dev workaround 
+# <-- plug-in dependencies workaround 
 
 from funcypy.eager.cols import removekey as remove_dict_key
 from funcypy.cols import flatten, nestten, removekey
