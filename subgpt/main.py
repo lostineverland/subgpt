@@ -10,7 +10,8 @@ import functools
 
 # plug-in dev workaround -->
 import sys
-sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
+# sys.path.append('/Users/carlos/code/subgpt/.venv/lib/python3.8/site-packages')
+sys.path.append(os.path.join(os.path.dirname(__file__), 'deps'))
 # <-- plug-in dev workaround 
 
 from funcypy.eager.cols import removekey as remove_dict_key
