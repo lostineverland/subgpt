@@ -5,8 +5,8 @@ description = "A ChatGPT plug-in for sublime text."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "funcypy @ git+ssh://git@github.com/lostineverland/funcypy.git",
-    # "funcypy",
+    # "funcypy @ git+ssh://git@github.com/lostineverland/funcypy.git",
+    "funcypy",
     "python-frontmatter>=1.1.0",
 ]
 authors = [
@@ -14,7 +14,7 @@ authors = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["subgpt", "funcypy", "python-frontmatter"]
+packages = ["subgpt"]
 
 # [tool.hatch.build.hooks.custom]
 # paths = ["build_sublime_package.py"]
@@ -24,14 +24,15 @@ packages = ["subgpt", "funcypy", "python-frontmatter"]
 
 [tool.uv.sources]
 # funcypy = { url = "git+ssh://git@github.com/lostineverland/funcypy.git" }
+funcypy = { path = "../funcypy" }
 # funcypy = { workspace = true}
 
-[tool.uv.workspace]
-# members = ["funcypy"]
+# [tool.uv.workspace]
+# members = ["../funcypy"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.metadata]
-allow-direct-references = true
+# [tool.hatch.metadata]
+# allow-direct-references = true

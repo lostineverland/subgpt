@@ -3,8 +3,13 @@ requires-python = ">=3.8"
 
 [[package]]
 name = "funcypy"
-version = "0.2.0"
-source = { git = "ssh://git@github.com/lostineverland/funcypy.git#6e345dcaaa0a62bff0816f426153002f40f74b85" }
+version = "0.3.0"
+source = { directory = "../funcypy" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.3.3" }]
 
 [[package]]
 name = "python-frontmatter"
@@ -89,6 +94,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "funcypy", git = "ssh://git@github.com/lostineverland/funcypy.git" },
+    { name = "funcypy", directory = "../funcypy" },
     { name = "python-frontmatter", specifier = ">=1.1.0" },
 ]
