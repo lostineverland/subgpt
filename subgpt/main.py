@@ -62,6 +62,13 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
         self.window.focus_view(new_view)
 
 
+class SubgptRenderViewCommand(sublime_plugin.TextCommand):
+    'Render contents from a window to a view'
+    def run(self, edit, contents, pos=0):
+        # Insert the text at the beginning of the view (position 0)
+        self.view.insert(edit, pos, contents)
+
+
 class SubgptCreateNewChatCommand(sublime_plugin.TextCommand):
     def run(self, edit, contents):
         # Insert the text at the beginning of the view (position 0)
