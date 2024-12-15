@@ -5,4 +5,5 @@
   "role": "You are a knowledge engine",
   "word_wrap": true,
   "include_meta": false,
+  "spell_check": true,
 }
