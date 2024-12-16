@@ -2,10 +2,10 @@
   { "id": "preferences",
     "children": [
       { "caption": "Package Settings",
-        "mnemonic": "P",
         "id": "package-settings",
         "children": [
           { "caption": "subgpt",
+            "id": "subgpt",
             "children": [
               { "caption": "README",
                 "command": "open_file",
@@ -17,14 +17,14 @@
               { "caption": "Settings",
                 "command": "edit_settings",
                 "args": {
-                  "base_file": "${packages}/subgpt/subgpt.sublime-settings",
+                  "file": "${packages}/subgpt/subgpt.sublime-settings",
                   "default": "{\n\t$0\n}\n"
                 }
               },
               { "caption": "Key Bindings",
                 "command": "edit_settings",
                 "args": {
-                  "base_file": "${packages}/subgpt/Default (${platform}).sublime-keymap",
+                  "file": "${packages}/subgpt/Default (${platform}).sublime-keymap",
                   "default": "[\n\t$0\n]\n"
                 }
               },

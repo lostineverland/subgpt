@@ -48,7 +48,7 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
             yaml.dump(
                 pipe(self.window,
                     get_settings,
-                    remove_dict_key(has('api_key', 'log_path', 'word_wrap')),
+                    remove_dict_key(has('api_key', 'log_path', 'word_wrap', 'spell_check')),
                     lambda e: {**e, 'timestamp': iso_ts('minutes')}
                     )
             ))
