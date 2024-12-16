@@ -2,6 +2,18 @@
 
 A ChatGPT plug-in for sublime text.
 
+# Usage
+
+*Start a new chat*:
+- MacOS: `cmd`+`opt`+`n`
+- Linux: `ctrl`+`alt`+`n`
+- Windows: `ctrl`+`alt`+`n`
+
+*Send query to chatGPT*:
+- MacOS: `opt`+`enter`
+- Linux: `alt`+`enter`
+- Windows: `alt`+`enter`
+
 # Build & Install
 
 ```sh
