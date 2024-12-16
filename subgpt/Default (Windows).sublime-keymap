@@ -1,0 +1,5 @@
+[
+  // SubGPT Send Question
+  { "keys": ["alt+enter"], "command": "subgpt_send_query", "context": [{"key": "selector", "operator": "equal", "operand": "source.subgptmd"}]},
+  { "keys": ["ctrl+alt+n"], "command": "subgpt_new_chat"},
+]
