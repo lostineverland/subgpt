@@ -1,6 +1,6 @@
 import sublime
 import sublime_plugin
-import os, sys
+import os, sys, re
 import json
 import time
 import urllib.request
@@ -54,25 +54,20 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
             ))
         # Insert Question marker
         q, a = render_response('', '')
-        new_view.run_command('subgpt_create_new_chat', {
-            "contents": yaml_frontmatter + '\n' + q[:-2]
-        })
+        render_view(new_view, yaml_frontmatter + '\n' + q[:-2])
 
         # Optionally, bring the new view to focus
         self.window.focus_view(new_view)
 
+def render_view(view, contents, pos=0):
+    run_cmd = class_to_func(SubgptRenderViewCommand)
+    view.run_command(run_cmd, dict(contents=contents, pos=pos))
 
 class SubgptRenderViewCommand(sublime_plugin.TextCommand):
     'Render contents from a window to a view'
     def run(self, edit, contents, pos=0):
         # Insert the text at the beginning of the view (position 0)
         self.view.insert(edit, pos, contents)
-
-
-class SubgptCreateNewChatCommand(sublime_plugin.TextCommand):
-    def run(self, edit, contents):
-        # Insert the text at the beginning of the view (position 0)
-        self.view.insert(edit, 0, contents)
 
 
 class SubgptSendQueryCommand(sublime_plugin.TextCommand):
@@ -92,30 +87,29 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
             status = AsyncStatusMessage(self.view, 'OpenAI', ['GPT.', 'GPT..', 'GPT...'], interval=500)
             response = callgpt(messages, md.metadata['model'], api_key, debug=debug)
             status.clear()
-            self.view.run_command('subgpt_render_query', {
-                "response": response,
-                "md_metadata": md.metadata,
-                "messages": messages,
-                "settings": settings,
-                "debug": debug,
-            })
+            if debug:
+                render_view(
+                    self.view,
+                    "\n" + json.dumps(dict(
+                        md_metadata=md.metadata,
+                        messages=messages,
+                        settings=settings,
+                        ), indent=2),
+                    self.view.size())
+                render_view(
+                    self.view,
+                    "\nquery object\n" + json.dumps(response, indent=2) + '\n',
+                    self.view.size())
+            else:
+                message, model = process_response(response)
+                contents = format_response(message, model, response, {**settings, **md.metadata})
+                render_view(
+                    self.view,
+                    contents,
+                    self.view.size())
         else:
             print('noop')
 
-
-class SubgptRenderQueryCommand(sublime_plugin.TextCommand):
-    def run(self, edit, response, md_metadata, messages, settings, debug=None):
-        if not debug:
-            message, model = process_response(response)
-            add_response(edit, self.view, message, model, response, {**settings, **md_metadata})
-        else:
-            self.view.insert(edit, self.view.size(),
-                "\n" + json.dumps(dict(
-                    md_metadata=md_metadata,
-                    messages=messages,
-                    settings=settings,
-                    ), indent=2))
-            self.view.insert(edit, self.view.size(), "\nquery object\n" + json.dumps(response, indent=2) + '\n')
 
 class SubgptLinkCommand(sublime_plugin.TextCommand):
     """Insert Iso Day"""
@@ -238,7 +232,7 @@ def filter_response_meta(*fields):
                 *map(verbatim, filter(complement(has_substr('.*')), fields))),
                 any)
 
-def add_response(edit, view, message, model, response, settings):
+def format_response(message, model, response, settings):
     meta = None
     if settings.get('include_meta'):
         meta = dict(
@@ -262,7 +256,7 @@ def add_response(edit, view, message, model, response, settings):
         )
     q, answer = render_response('', message['content'], meta)
     indented_answer ='\n\n' + indent(2, answer)
-    view.insert(edit, view.size(), indented_answer + q)
+    return indented_answer + q
 
 def indent(n, s):
     return '\n'.join(map(lambda s: ' ' * n + s, s.split('\n')))
@@ -279,6 +273,12 @@ def clean_white_space(s):
     start_index = s.find(start)
     end_index = s.rfind(end) + len(end)
     return s[start_index:end_index]
+
+def class_to_func(cls):
+    # Convert PascalCase to snake_case Command Name
+    name = cls.__name__
+    s1 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', name)
+    return s1.lower().rsplit('_', 1)[0]
 
 def display(s):
     return """
