@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'deps'))
 # <-- plug-in dependencies workaround 
 
 from funcypy.eager.cols import removekey as remove_dict_key
-from funcypy.cols import flatten, nestten, removekey
+from funcypy.cols import flatten, nestten, removekey, removevalnone
 from funcypy.funcy import pipe, has, juxt, rcomp, partial, complement
 from funcypy import seqs
 from funcypy.times import iso_ts, now
@@ -172,7 +172,7 @@ def build_messages(contents, metadata):
     chat = parse_chat(contents, metadata)
     q, a, meta = next(chat, [None, None, None])
     if q:
-        yield dict(role='system', content=meta.get('role', ''))
+        if role := meta.get('role', ''): yield dict(role='system', content=role)
         yield dict(role='user', content=clean_white_space(q))
         if a: yield dict(role='assistant', content=clean_white_space(frontmatter.loads(dedent(2, a)).content))
         for q, a, meta in chat:
@@ -180,17 +180,17 @@ def build_messages(contents, metadata):
             if a: yield dict(role='assistant', content=clean_white_space(frontmatter.loads(dedent(2, a)).content))
 
 
-def callgpt(messages, model, api_key, debug=False):
+def callgpt(messages, meta, api_key, debug=False):
     endpoint = 'https://api.openai.com/v1/chat/completions'
     headers = {
         "Content-Type": "application/json",
         "Authorization": "Bearer {}".format(api_key)
     }
-    data = json.dumps({
-             "model": model,
-             "messages": messages,
-             "temperature": 0.7
-           }).encode('utf-8')
+    data = json.dumps(removevalnone({
+                 "model": meta.get('model'),
+                 "messages": messages,
+                 "temperature": meta.get('temperature')
+               })).encode('utf-8')
     if debug: return dict(endpoint=endpoint, data=json.loads(data), headers=headers)
     req = urllib.request.Request(endpoint, data=data, headers=headers)
     try:

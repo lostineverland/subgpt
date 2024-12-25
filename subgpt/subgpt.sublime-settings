@@ -6,4 +6,5 @@
   "word_wrap": true,
   "include_meta": false,
   "spell_check": true,
+  "temperature": 0.7,
 }
