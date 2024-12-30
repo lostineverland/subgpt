@@ -12,8 +12,8 @@ import functools
 sys.path.append(os.path.join(os.path.dirname(__file__), 'deps'))
 # <-- plug-in dependencies workaround 
 
-from funcypy.eager.cols import removekey as remove_dict_key
-from funcypy.cols import flatten, nestten, removekey, removevalnone
+from funcypy.eager.cols import removekey as remove_dict_key, removevalnone
+from funcypy.cols import flatten, nestten, removekey
 from funcypy.funcy import pipe, has, juxt, rcomp, partial, complement
 from funcypy import seqs
 from funcypy.times import iso_ts, now
@@ -26,7 +26,8 @@ s_delimeter = 'Summary Keywords'
 
 def get_settings(window):
     settings = sublime.load_settings("subgpt.sublime-settings").to_dict()
-    project_settings = window.project_data().get('settings', {})
+    project_data = window.project_data() or {}
+    project_settings = project_data.get('settings', {})
     return {**settings, **project_settings}
 
 class SubgptNewChatCommand(sublime_plugin.WindowCommand):
@@ -85,7 +86,7 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
         messages = list(build_messages(md.content, md.metadata))
         if messages[-1].get('role') == 'user' or debug:
             status = AsyncStatusMessage(self.view, 'OpenAI', ['GPT.', 'GPT..', 'GPT...'], interval=500)
-            response = callgpt(messages, md.metadata['model'], api_key, debug=debug)
+            response = callgpt(messages, md.metadata, api_key, debug=debug)
             status.clear()
             if debug:
                 render_view(
