@@ -33,6 +33,9 @@ def get_settings(window):
 class SubgptNewChatCommand(sublime_plugin.WindowCommand):
     """Open a new chat"""
     def run(self):
+        # Load settings
+        settings = get_settings(self.window)
+
         # Create a new file (view) in the current window
         new_view = self.window.new_file()
 
@@ -41,14 +44,16 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
         # with the correct path to your syntax file
         new_view.set_syntax_file('Packages/subgpt/subgpt.sublime-syntax')
 
-        # Optionally, set the name of the new view (not saved)
-        new_view.set_name(iso_ts('minutes', local=True).replace(":", "-") + '.md')
+        # Optionally, set the name of the new view (not saved) 
+        file_name = iso_ts('minutes', local=True).replace(":", "-") + '.md'
+        file_path = setpath(settings)
+        new_view.retarget(os.path.join(file_path, file_name))
+        # new_view.run_command('save')
 
         # Insert initial MD frontmatter
         yaml_frontmatter = "---\n{}---\n".format(
             yaml.dump(
-                pipe(self.window,
-                    get_settings,
+                pipe(settings,
                     remove_dict_key(has('api_key', 'log_path', 'word_wrap', 'spell_check')),
                     lambda e: {**e, 'timestamp': iso_ts('minutes')}
                     )
@@ -152,6 +157,20 @@ class AsyncStatusMessage:
         self.active = False
         self.view.erase_status(self.key)
 
+
+def setpath(config):
+    base_path = os.path.expandvars(os.path.expanduser(config.get('log_path', 'GPT_logs')))
+    home = os.path.expandvars('$HOME')
+    if not base_path.startswith(home):
+        base_path = os.path.join(home, base_path)
+    log_path = os.path.join(
+        base_path,
+        iso_ts('years', local=True),
+        iso_ts('months', local=True))
+    os.makedirs(
+        log_path,
+        exist_ok=True)
+    return log_path
 
 def parse_chat(contents, metadata):
     for block in contents.split(q_delimeter)[1:]:
