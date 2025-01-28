@@ -27,7 +27,9 @@ s_delimeter = 'Summary Keywords'
 def get_settings(window):
     settings = sublime.load_settings("subgpt.sublime-settings").to_dict()
     project_data = window.project_data() or {}
-    project_settings = project_data.get('settings', {})
+    project_settings = project_data.get('subgpt', {})
+    if project_settings:
+        project_settings.update(dict(base_path=window.folders()[0]))
     return {**settings, **project_settings}
 
 class SubgptNewChatCommand(sublime_plugin.WindowCommand):
@@ -54,7 +56,7 @@ class SubgptNewChatCommand(sublime_plugin.WindowCommand):
         yaml_frontmatter = "---\n{}---\n".format(
             yaml.dump(
                 pipe(settings,
-                    remove_dict_key(has('api_key', 'log_path', 'word_wrap', 'spell_check')),
+                    remove_dict_key(has('api_key', 'log_path', 'word_wrap', 'spell_check', 'base_path')),
                     lambda e: {**e, 'timestamp': iso_ts('minutes')}
                     )
             ))
@@ -161,7 +163,9 @@ class AsyncStatusMessage:
 def setpath(config):
     base_path = os.path.expandvars(os.path.expanduser(config.get('log_path', 'GPT_logs')))
     home = os.path.expandvars('$HOME')
-    if not base_path.startswith(home):
+    if base_path.startswith('./'):
+        base_path = os.path.join(config.get('base_path', ''), base_path)
+    elif not base_path.startswith(home):
         base_path = os.path.join(home, base_path)
     log_path = os.path.join(
         base_path,
