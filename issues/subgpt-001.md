@@ -1,5 +1,5 @@
 ---
-- status: todo
+- status: done
 ---
 # Subgpt-001: New File Name
 

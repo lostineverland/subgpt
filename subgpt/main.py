@@ -2,7 +2,6 @@ import sublime
 import sublime_plugin
 import os, sys, re
 import json
-import time
 import urllib.request
 import urllib.error
 import threading
@@ -17,6 +16,7 @@ from funcypy.cols import flatten, nestten, removekey
 from funcypy.funcy import pipe, has, juxt, rcomp, partial, complement
 from funcypy import seqs
 from funcypy.times import iso_ts, now
+from funcypy.monitor import json_serializer
 import frontmatter, yaml
 
 
@@ -95,7 +95,7 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
             status = AsyncStatusMessage(self.view, 'OpenAI', ['GPT.', 'GPT..', 'GPT...'], interval=500)
             response = callgpt(messages, md.metadata, api_key, debug=debug)
             status.clear()
-            if debug:
+            if debug or response.get('err'):
                 render_view(
                     self.view,
                     "\n" + json.dumps(dict(
@@ -212,6 +212,7 @@ def callgpt(messages, meta, api_key, debug=False):
     }
     data = json.dumps(removevalnone({
                  "model": meta.get('model'),
+                 "reasoning_effort": meta.get('reasoning_effort'),
                  "messages": messages,
                  "temperature": meta.get('temperature')
                })).encode('utf-8')
@@ -223,7 +224,7 @@ def callgpt(messages, meta, api_key, debug=False):
             response = json.loads(raw_response.decode('utf-8'))
             return response
     except urllib.error.URLError as e:
-        raise e
+        return dict(endpoint=endpoint, data=json.loads(data), headers=headers, err=json.loads(json.dumps(e, default=json_serializer)))
 
 def process_response(resp):
     message = resp['choices'][0]['message']
