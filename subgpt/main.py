@@ -196,7 +196,11 @@ def build_messages(contents, metadata):
     chat = parse_chat(contents, metadata)
     q, a, meta = next(chat, [None, None, None])
     if q:
-        if role := meta.get('role', ''): yield dict(role='system', content=role)
+        # if isinstance(role := meta.get('role', ''), dict):
+        #     yield dict(role=list(role.keys())[0], content=list(role.vals())[0])
+        # elif role := meta.get('role', ''): 
+        #     yield dict(role='system', content=role)
+        yield dict(role='developer', content=meta.get('role', ''))
         yield dict(role='user', content=clean_white_space(q))
         if a: yield dict(role='assistant', content=clean_white_space(frontmatter.loads(dedent(2, a)).content))
         for q, a, meta in chat:
