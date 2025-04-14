@@ -7,6 +7,12 @@
 - [Sublime Docs](https://www.sublimetext.com/docs/index.html)
 - [Sublime API Ref](https://www.sublimetext.com/docs/api_reference.html)
 
+# Todo
+
+- [ ] [Subgpt-001](./issues/subgpt-001.md): new file name
+- [ ] [Subgpt-002](./issues/subgpt-002.md): Easy/Advance
+- [ ] Subgpt-003: replace urllib with requests
+
 # Logs
 ## 2024-W47
 - There's a need to split out the composable components out of the classes.
