@@ -18,6 +18,7 @@ from funcypy import seqs
 from funcypy.times import iso_ts, now
 from funcypy.monitor import json_serializer
 import frontmatter, yaml
+from .costs import calc_cost
 
 
 q_delimeter = 'Question:\n---------\n'
@@ -265,7 +266,10 @@ def filter_response_meta(*fields):
                 any)
 
 def format_response(message, model, response, settings):
-    meta = None
+    meta = dict(
+        model=model,
+        cost=calc_cost(settings.get('model'), response),
+        timestamp=iso_ts('minutes', local=True))
     if settings.get('include_meta'):
         meta = dict(
             response=pipe(response,
@@ -283,8 +287,7 @@ def format_response(message, model, response, settings):
                     nestten,
                     dict
                 ),
-            model=model,
-            timestamp=iso_ts('minutes', local=True)
+            **meta
         )
     q, answer = render_response('', message['content'], meta)
     indented_answer ='\n\n' + indent(2, answer)
