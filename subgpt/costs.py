@@ -1,5 +1,10 @@
 '''Calculate the costs of the API usage
 Pricing: https://platform.openai.com/docs/pricing
+Copy and give to chatGPT
+prompt: Please turn the following text copied from an html table into a markdown table and sort it by `input` reversed:
+```txt
+...
+```
 '''
 
 s = '''
