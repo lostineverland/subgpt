@@ -24,7 +24,7 @@ packages = ["subgpt"]
 
 [tool.uv.sources]
 # funcypy = { url = "git+ssh://git@github.com/lostineverland/funcypy.git" }
-funcypy = { path = "../funcypy" }
+funcypy = { path = "../../funcypy" }
 # funcypy = { workspace = true}
 
 # [tool.uv.workspace]

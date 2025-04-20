@@ -1,10 +1,11 @@
 version = 1
+revision = 1
 requires-python = ">=3.8"
 
 [[package]]
 name = "funcypy"
 version = "0.7.2"
-source = { directory = "../funcypy" }
+source = { directory = "../../funcypy" }
 
 [package.metadata]
 
@@ -94,6 +95,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "funcypy", directory = "../funcypy" },
+    { name = "funcypy", directory = "../../funcypy" },
     { name = "python-frontmatter", specifier = ">=1.1.0" },
 ]
