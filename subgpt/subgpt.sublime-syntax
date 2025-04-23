@@ -3,7 +3,7 @@
 name: SubGPT Chat
 # file_extensions:
 #   - md
-scope: source.subgptmd
+scope: text.plain.subgptmd
 
 contexts:
   main:

@@ -7,9 +7,6 @@
     "o1",
     "o3-mini",
   ],
- "role": "You are a knowledge engine",
-  "word_wrap": true,
+  "role": "You are a knowledge engine",
   "include_meta": false,
-  "spell_check": true,
-  // "temperature": 0.7,
 }
