@@ -38,6 +38,7 @@ OPEN_API_PRICING = {model: dict(input=float(input), cached=float(cached), output
     for model, input, cached, output in map(proc_line, lines)}
 
 def calc_cost(model, response):
+    if isinstance(model, list): model = model[0]
     try:
         completion_tokens = int(response['usage']['completion_tokens'])
         prompt_tokens = int(response['usage']['prompt_tokens'])

@@ -218,8 +218,12 @@ def callgpt(messages, meta, api_key, debug=False):
         "Content-Type": "application/json",
         "Authorization": "Bearer {}".format(api_key)
     }
+    if isinstance(m := meta.get('model'), list):
+        model = m[0]
+    else:
+        model = m
     data = json.dumps(removevalnone({
-                 "model": meta.get('model'),
+                 "model": model,
                  "reasoning_effort": meta.get('reasoning_effort'),
                  "messages": messages,
                  "temperature": meta.get('temperature')
