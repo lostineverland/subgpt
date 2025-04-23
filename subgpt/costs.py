@@ -38,7 +38,6 @@ OPEN_API_PRICING = {model: dict(input=float(input), cached=float(cached), output
     for model, input, cached, output in map(proc_line, lines)}
 
 def calc_cost(model, response):
-    if isinstance(model, list): model = model[0]
     try:
         completion_tokens = int(response['usage']['completion_tokens'])
         prompt_tokens = int(response['usage']['prompt_tokens'])
@@ -48,7 +47,7 @@ def calc_cost(model, response):
         cached_price = cached_tokens * model_rates['cached'] / 1e6
         output_price = completion_tokens * model_rates['output'] / 1e6
         return input_price + cached_price + output_price
-    except:
-        print(model, response)
+    except Exception as e:
+        print(model, response, e)
         print('failed to get cost')
         return 'N/A'

@@ -270,6 +270,7 @@ def filter_response_meta(*fields):
                 any)
 
 def format_response(message, model, response, settings):
+    if isinstance(model, list): model = model[0]
     meta = dict(
         model=model,
         cost=calc_cost(settings.get('model'), response),
