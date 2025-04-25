@@ -2,11 +2,13 @@
   "api_key": "sk-################################################",
   "log_path": "$HOME/GPT_logs",
    "model": [
-    "gpt-4.1",
+    "gpt-4o-search-preview",
+    // "gpt-4.1",
     // "gpt-4o",
     // "o1",
     // "o3-mini",
   ],
+  "web_search_options": {"search_context_size": "medium"},
   "role": "You are a knowledge engine",
   "include_meta": false,
 }
