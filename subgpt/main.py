@@ -277,25 +277,30 @@ def format_response(message, model, response, settings):
         model=model,
         cost=calc_cost(requested_model, response),
         timestamp=iso_ts('minutes', local=True))
+    extra = dict(
+        response=pipe(response,
+                functools.partial(flatten, follow_list=True),
+                removekey(filter_response_meta(
+                    'choices.*.annotations.*.url_citation.end_index',
+                    'choices.*.annotations.*.url_citation.start_index',
+                    'choices.*.annotations.*.url_citation.title',
+                    'choices.*.index',
+                    'choices.*.message.role',
+                    'choices.*.message.content',
+                    'created',
+                    'id',
+                    'model',
+                    'system_fingerprint',
+                    'usage.completion_tokens_details.*',
+                    )),
+                nestten,
+                dict,
+            ),
+    )
     if settings.get('include_meta'):
-        meta = dict(
-            response=pipe(response,
-                    functools.partial(flatten, follow_list=True),
-                    removekey(filter_response_meta(
-                        'rechoices.*.index',
-                        'choices.*.message.role',
-                        'choices.*.message.content',
-                        'created',
-                        'id',
-                        'model',
-                        'system_fingerprint',
-                        'usage.completion_tokens_details.*',
-                        )),
-                    nestten,
-                    dict
-                ),
-            **meta
-        )
+        meta = dict(**extra, **meta)
+    else:
+        print("extra:", extra)
     q, answer = render_response('', message['content'], meta)
     indented_answer ='\n\n' + indent(2, answer)
     return indented_answer + q
