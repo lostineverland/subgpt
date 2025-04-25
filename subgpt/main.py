@@ -225,6 +225,7 @@ def callgpt(messages, meta, api_key, debug=False):
     data = json.dumps(removevalnone({
                  "model": model,
                  "reasoning_effort": meta.get('reasoning_effort'),
+                 "web_search_options": meta.get('web_search_options'),
                  "messages": messages,
                  "temperature": meta.get('temperature')
                })).encode('utf-8')
