@@ -12,6 +12,10 @@
         "command": "subgpt_send_query",
         "args": {"debug": true}
     },
+    {
+        "caption": "SubGPT: Show Metadata",
+        "command": "subgpt_get_metadata",
+    },
     // {
     //     "caption": "SubGPT: Link",
     //     "command": "subgpt_link"

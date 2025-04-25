@@ -79,6 +79,14 @@ class SubgptRenderViewCommand(sublime_plugin.TextCommand):
         self.view.insert(edit, pos, contents)
 
 
+class SubgptGetMetadataCommand(sublime_plugin.TextCommand):
+    def run(self, edit, debug=False):
+        metadata = get_state(self.view, 'metadata')
+        new_view = self.view.window().new_file()
+        new_view.set_syntax_file('Packages/JSON/JSON.sublime-syntax')
+        render_view(new_view, json.dumps(metadata, indent=2))
+
+
 class SubgptSendQueryCommand(sublime_plugin.TextCommand):
     def run(self, edit, debug=False):
         # Start the request in a new thread
@@ -111,7 +119,10 @@ class SubgptSendQueryCommand(sublime_plugin.TextCommand):
                     self.view.size())
             else:
                 message, model = process_response(response)
-                contents = format_response(message, model, response, {**settings, **md.metadata})
+                # contents = format_response(message, model, response, {**settings, **md.metadata})
+                meta, extra = format_metadata(model, response, md.metadata)
+                update_state(self.view, metadata=[{**extra, **meta}])
+                contents = format_response(message, meta, extra, md.metadata)
                 render_view(
                     self.view,
                     contents,
@@ -270,7 +281,7 @@ def filter_response_meta(*fields):
                 *map(verbatim, filter(complement(has_substr('.*')), fields))),
                 any)
 
-def format_response(message, model, response, settings):
+def format_metadata(model, response, settings):
     requested_model = settings.get('model')
     if isinstance(requested_model, list): requested_model = requested_model[0]
     meta = dict(
@@ -283,7 +294,6 @@ def format_response(message, model, response, settings):
                 removekey(filter_response_meta(
                     'choices.*.annotations.*.url_citation.end_index',
                     'choices.*.annotations.*.url_citation.start_index',
-                    'choices.*.annotations.*.url_citation.title',
                     'choices.*.index',
                     'choices.*.message.role',
                     'choices.*.message.content',
@@ -291,16 +301,17 @@ def format_response(message, model, response, settings):
                     'id',
                     'model',
                     'system_fingerprint',
-                    'usage.completion_tokens_details.*',
+                    # 'usage.completion_tokens_details.*',
                     )),
                 nestten,
                 dict,
             ),
     )
+    return meta, extra
+
+def format_response(message, meta, extra, settings):
     if settings.get('include_meta'):
-        meta = dict(**extra, **meta)
-    else:
-        print("extra:", extra)
+        meta = dict(**meta, **extra)
     q, answer = render_response('', message['content'], meta)
     indented_answer ='\n\n' + indent(2, answer)
     return indented_answer + q
@@ -311,6 +322,32 @@ def indent(n, s):
 def dedent(n, s):
     return '\n'.join(map(lambda s: s[n:], s.split('\n')))
 
+def update_state(view, **store):
+    '''Manage state for the view, it sotores values in `storage`
+        it will update values if they exist, applying
+        - merge with `dict`s
+        - append with `list`s (immutably)
+    '''
+    storage = view.settings().get('storage', {})
+    for k, v in store.items():
+        if val := storage.get(k):
+            if isinstance(val, dict):
+                storage = {**storage, **{k: {**val, **v}}}
+            elif isinstance(val, list):
+                storage = {**storage, **{k: val + v}}
+            else:
+                assert False, "state updates must be in the form of list or dict"
+        else:
+            storage = {**storage, k: v}
+    view.settings().set('storage', storage)
+
+def get_state(view, key=None):
+    '''Retrieve the state for the view'''
+    storage = view.settings().get('storage', {})
+    if key:
+        return storage.get(key)
+    else:
+        return storage
 
 def status_update(view, key, messages):
     sublime.set_timeout_async(lambda: self.view.erase_status(key), 0)
