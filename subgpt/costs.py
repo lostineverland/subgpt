@@ -8,31 +8,13 @@ prompt: Please turn the following text copied from an html table into a markdown
 '''
 
 s = '''
-  | Model                        | input   | cached | output  |
-  | o1-pro                       | $150.00 | -      | $600.00 |
-  | gpt-4.5-preview              | $75.00  | $37.50 | $150.00 |
-  | o3-pro                       | $20.00  | -      | $80.00  |
-  | o3-deep-research             | $10.00  | $2.50  | $40.00  |
-  | gpt-4o-realtime-preview      | $5.00   | $2.50  | $20.00  |
-  | gpt-image-1                  | $5.00   | $1.25  | -       |
-  | computer-use-preview         | $3.00   | -      | $12.00  |
-  | gpt-4o                       | $2.50   | $1.25  | $10.00  |
-  | gpt-4o-audio-preview         | $2.50   | -      | $10.00  |
-  | gpt-4o-search-preview        | $2.50   | -      | $10.00  |
-  | o4-mini-deep-research        | $2.00   | $0.50  | $8.00   |
-  | o3                           | $2.00   | $0.50  | $8.00   |
-  | gpt-4.1                      | $2.00   | $0.50  | $8.00   |
-  | o1                           | $15.00  | $7.50  | $60.00  |
-  | o4-mini                      | $1.10   | $0.275 | $4.40   |
-  | o3-mini                      | $1.10   | $0.55  | $4.40   |
-  | o1-mini                      | $1.10   | $0.55  | $4.40   |
-  | codex-mini-latest            | $1.50   | $0.375 | $6.00   |
-  | gpt-4o-mini-realtime-preview | $0.60   | $0.30  | $2.40   |
-  | gpt-4o-mini                  | $0.15   | $0.075 | $0.60   |
-  | gpt-4o-mini-audio-preview    | $0.15   | -      | $0.60   |
-  | gpt-4o-mini-search-preview   | $0.15   | -      | $0.60   |
-  | gpt-4.1-mini                 | $0.40   | $0.10  | $1.60   |
-  | gpt-4.1-nano                 | $0.10   | $0.025 | $0.40   |
+  |    Model     | Input  | Cached |  Output |
+  | gpt-5.5-pro  | $30.00 | -      | $180.00 |
+  | gpt-5.4-pro  | $30.00 | -      | $180.00 |
+  | gpt-5.5      | $5.00  | $0.50  | $30.00  |
+  | gpt-5.4      | $2.50  | $0.25  | $15.00  |
+  | gpt-5.4-mini | $0.75  | $0.075 | $4.50   |
+  | gpt-5.4-nano | $0.20  | $0.02  | $1.25   |
 '''
 import json
 proc_line = lambda s: filter(
