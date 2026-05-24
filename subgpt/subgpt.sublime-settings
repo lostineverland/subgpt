@@ -3,7 +3,9 @@
   "log_path": "$HOME/GPT_logs",
   "model": [
     "gpt-5.5",
+    "gpt-5-search-api",
   ],
   "role": "You are a knowledge engine",
   "include_meta": false,
+  "web_search_options": {"search_context_size": "medium"}
 }
