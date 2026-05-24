@@ -4,7 +4,6 @@
   "model": [
     "gpt-5.5",
   ],
-  "web_search_options": {"search_context_size": "medium"},
   "role": "You are a knowledge engine",
   "include_meta": false,
 }
